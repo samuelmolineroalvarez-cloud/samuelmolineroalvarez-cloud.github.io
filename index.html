@@ -95,11 +95,34 @@
             }));
         }
 
+        async function fetchJson(url) {
+            const response = await fetch(url);
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                throw new Error(`${url} returned HTTP ${response.status}.`);
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error(`${url} did not return JSON. Open this page through a web server.`);
+            }
+            return response.json();
+        }
+
+        async function parseApiResponse(response, url) {
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                throw new Error(`${url} returned HTTP ${response.status}.`);
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error(`${url} did not return JSON.`);
+            }
+            return response.json();
+        }
+
         async function loadData() {
             try {
                 const [populationQuery, employmentQuery] = await Promise.all([
-                    fetch("population_query.json").then((response) => response.json()),
-                    fetch("employment_query.json").then((response) => response.json())
+                    fetchJson("./population_query.json"),
+                    fetchJson("./employment_query.json")
                 ]);
                 const [populationResponse, employmentResponse] = await Promise.all([
                     fetch(populationApiUrl, {
@@ -119,8 +142,8 @@
                 }
 
                 const [populationData, employmentData] = await Promise.all([
-                    populationResponse.json(),
-                    employmentResponse.json()
+                    parseApiResponse(populationResponse, populationApiUrl),
+                    parseApiResponse(employmentResponse, employmentApiUrl)
                 ]);
                 const populationEntries = getDimensionEntries(populationData, "alue_23_20260101");
                 const employmentEntries = getDimensionEntries(employmentData, "alue_23_20250101");
