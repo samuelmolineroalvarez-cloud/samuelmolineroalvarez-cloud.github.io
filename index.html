@@ -98,8 +98,8 @@
         async function loadData() {
             try {
                 const [populationQuery, employmentQuery] = await Promise.all([
-                    fetch("week3/population_query.json").then((response) => response.json()),
-                    fetch("week3/employment_query.json").then((response) => response.json())
+                    fetch("population_query.json").then((response) => response.json()),
+                    fetch("employment_query.json").then((response) => response.json())
                 ]);
                 const [populationResponse, employmentResponse] = await Promise.all([
                     fetch(populationApiUrl, {
