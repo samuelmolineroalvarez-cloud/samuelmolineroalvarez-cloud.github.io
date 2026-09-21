@@ -3,16 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Population by municipality</title>
+    <title>Municipality employment statistics in Finland</title>
     <style>
         body {
             font-family: Verdana, Arial, sans-serif;
+        }
+
+        .center {
+            margin: auto;
+            padding: 60px;
+            width: 60%;
+        }
+
+        h1 {
+            text-align: center;
         }
 
         table {
             border-collapse: collapse;
             font-size: 16px;
             text-align: left;
+            table-layout: fixed;
+            width: 100%;
         }
 
         table td {
@@ -26,69 +38,121 @@
             padding: 12px 0px 12px 6px;
             border-bottom: 2px solid gray;
         }
+
+        tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr.over-45 {
+            background-color: #abffbd;
+        }
+
+        tbody tr.under-25 {
+            background-color: #ff9e9e;
+        }
     </style>
 </head>
 <body>
-    <h1>Population by municipality</h1>
-    <p id="status">Loading population data...</p>
+    <div class="center">
+        <h1>Municipality employment statistics in Finland</h1>
+        <p id="status">Loading population and employment data...</p>
 
-    <table>
-        <thead>
-            <tr>
-                <th scope="col">Municipality</th>
-                <th scope="col">Population</th>
-            </tr>
-        </thead>
-        <tbody id="population-data"></tbody>
-    </table>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Municipality</th>
+                    <th scope="col">Population</th>
+                    <th scope="col">Employment amount</th>
+                    <th scope="col">Employment-%</th>
+                </tr>
+            </thead>
+            <tbody id="population-data"></tbody>
+        </table>
+    </div>
 
     <script>
-        const apiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/11ra.px";
+        const populationApiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/11ra.px";
+        const employmentApiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/tyokay/115b.px";
         const tableBody = document.getElementById("population-data");
         const status = document.getElementById("status");
 
-        function addPopulationRows(dataset) {
-            const municipalityDimension = dataset.dimension.alue_23_20260101;
-            const municipalities = municipalityDimension.category.label;
-            const municipalityIndexes = municipalityDimension.category.index;
-            const values = dataset.value;
-            const municipalityKeys = Array.isArray(municipalityIndexes)
-                ? (Array.isArray(municipalities) ? municipalityIndexes : Object.keys(municipalities))
-                : Object.keys(municipalityIndexes).sort((a, b) => municipalityIndexes[a] - municipalityIndexes[b]);
+        function getDimensionEntries(dataset, dimensionCode) {
+            const dimension = dataset.dimension[dimensionCode];
+            const labels = dimension.category.label;
+            const indexes = dimension.category.index;
+            const keys = Array.isArray(indexes)
+                ? (Array.isArray(labels) ? indexes : Object.keys(labels))
+                : Object.keys(indexes).sort((a, b) => indexes[a] - indexes[b]);
 
-            municipalityKeys.forEach((key, index) => {
-                const row = tableBody.insertRow();
-                row.insertCell().textContent = municipalities[key];
-                row.insertCell().textContent = values[index] ?? "-";
-            });
+            return keys.map((key, index) => ({
+                key,
+                label: labels[key],
+                value: dataset.value[index]
+            }));
         }
 
-        async function loadPopulationData() {
+        async function loadData() {
             try {
-                const query = await fetch("population_query.json").then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Could not load population_query.json.");
-                    }
-                    return response.json();
-                });
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(query)
-                });
+                const [populationQuery, employmentQuery] = await Promise.all([
+                    fetch("week3/population_query.json").then((response) => response.json()),
+                    fetch("week3/employment_query.json").then((response) => response.json())
+                ]);
+                const [populationResponse, employmentResponse] = await Promise.all([
+                    fetch(populationApiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(populationQuery)
+                    }),
+                    fetch(employmentApiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(employmentQuery)
+                    })
+                ]);
 
-                if (!response.ok) {
-                    throw new Error(`Population API request failed (${response.status}).`);
+                if (!populationResponse.ok || !employmentResponse.ok) {
+                    throw new Error("One of the API requests failed.");
                 }
 
-                addPopulationRows(await response.json());
-                status.textContent = "Population data loaded.";
+                const [populationData, employmentData] = await Promise.all([
+                    populationResponse.json(),
+                    employmentResponse.json()
+                ]);
+                const populationEntries = getDimensionEntries(populationData, "alue_23_20260101");
+                const employmentEntries = getDimensionEntries(employmentData, "alue_23_20250101");
+                const employmentByKey = new Map(employmentEntries.map((entry) => [entry.key, entry.value]));
+
+                populationEntries.forEach((population) => {
+                    const employment = employmentByKey.get(population.key);
+                    if (employment === undefined || population.value === null) {
+                        return;
+                    }
+
+                    const percentage = (employment / population.value) * 100;
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = population.label;
+                    row.insertCell().textContent = population.value;
+                    row.insertCell().textContent = employment;
+                    row.insertCell().textContent = `${percentage.toFixed(2)}%`;
+
+                    if (percentage > 45) {
+                        row.classList.add("over-45");
+                    } else if (percentage < 25) {
+                        row.classList.add("under-25");
+                    }
+                });
+
+                status.textContent = "Population and employment data loaded.";
             } catch (error) {
-                status.textContent = `Unable to load population data: ${error.message}`;
+                status.textContent = `Unable to load population and employment data: ${error.message}`;
             }
         }
 
-        loadPopulationData();
+        loadData();
     </script>
 </body>
 </html>
