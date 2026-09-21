@@ -1,1 +1,101 @@
+const populationApiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/11ra.px";
+        const employmentApiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/tyokay/115b.px";
+        const tableBody = document.getElementById("population-data");
+        const status = document.getElementById("status");
 
+        function getDimensionEntries(dataset, dimensionCode) {
+            const dimension = dataset.dimension[dimensionCode];
+            const labels = dimension.category.label;
+            const indexes = dimension.category.index;
+            const keys = Array.isArray(indexes)
+                ? (Array.isArray(labels) ? indexes : Object.keys(labels))
+                : Object.keys(indexes).sort((a, b) => indexes[a] - indexes[b]);
+
+            return keys.map((key, index) => ({
+                key,
+                label: labels[key],
+                value: dataset.value[index]
+            }));
+        }
+
+        async function fetchJson(url) {
+            const response = await fetch(url);
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                throw new Error(`${url} returned HTTP ${response.status}.`);
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error(`${url} did not return JSON. Open this page through a web server.`);
+            }
+            return response.json();
+        }
+
+        async function parseApiResponse(response, url) {
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                throw new Error(`${url} returned HTTP ${response.status}.`);
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error(`${url} did not return JSON.`);
+            }
+            return response.json();
+        }
+
+        async function loadData() {
+            try {
+                const [populationQuery, employmentQuery] = await Promise.all([
+                    fetchJson("./population_query.json"),
+                    fetchJson("./employment_query.json")
+                ]);
+                const [populationResponse, employmentResponse] = await Promise.all([
+                    fetch(populationApiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(populationQuery)
+                    }),
+                    fetch(employmentApiUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(employmentQuery)
+                    })
+                ]);
+
+                if (!populationResponse.ok || !employmentResponse.ok) {
+                    throw new Error("One of the API requests failed.");
+                }
+
+                const [populationData, employmentData] = await Promise.all([
+                    parseApiResponse(populationResponse, populationApiUrl),
+                    parseApiResponse(employmentResponse, employmentApiUrl)
+                ]);
+                const populationEntries = getDimensionEntries(populationData, "alue_23_20260101");
+                const employmentEntries = getDimensionEntries(employmentData, "alue_23_20250101");
+                const employmentByKey = new Map(employmentEntries.map((entry) => [entry.key, entry.value]));
+
+                populationEntries.forEach((population) => {
+                    const employment = employmentByKey.get(population.key);
+                    if (employment === undefined || population.value === null) {
+                        return;
+                    }
+
+                    const percentage = (employment / population.value) * 100;
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = population.label;
+                    row.insertCell().textContent = population.value;
+                    row.insertCell().textContent = employment;
+                    row.insertCell().textContent = `${percentage.toFixed(2)}%`;
+
+                    if (percentage > 45) {
+                        row.classList.add("over-45");
+                    } else if (percentage < 25) {
+                        row.classList.add("under-25");
+                    }
+                });
+
+                status.textContent = "Population and employment data loaded.";
+            } catch (error) {
+                status.textContent = `Unable to load population and employment data: ${error.message}`;
+            }
+        }
+
+        loadData();
