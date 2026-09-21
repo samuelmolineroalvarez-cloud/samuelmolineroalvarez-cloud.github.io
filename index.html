@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population by municipality</title>
+</head>
+<body>
+    <h1>Population by municipality</h1>
+    <p id="status">Loading population data...</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Municipality</th>
+                <th scope="col">Population</th>
+            </tr>
+        </thead>
+        <tbody id="population-data"></tbody>
+    </table>
+
+    <script>
+        const apiUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/11ra.px";
+        const tableBody = document.getElementById("population-data");
+        const status = document.getElementById("status");
+
+        function addPopulationRows(dataset) {
+            const municipalityDimension = dataset.dimension.alue_23_20260101;
+            const municipalities = municipalityDimension.category.label;
+            const municipalityIndexes = municipalityDimension.category.index;
+            const values = dataset.value;
+            const municipalityKeys = Array.isArray(municipalityIndexes)
+                ? (Array.isArray(municipalities) ? municipalityIndexes : Object.keys(municipalities))
+                : Object.keys(municipalityIndexes).sort((a, b) => municipalityIndexes[a] - municipalityIndexes[b]);
+
+            municipalityKeys.forEach((key, index) => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = municipalities[key];
+                row.insertCell().textContent = values[index] ?? "-";
+            });
+        }
+
+        async function loadPopulationData() {
+            try {
+                const query = await fetch("population_query.json").then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Could not load population_query.json.");
+                    }
+                    return response.json();
+                });
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(query)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Population API request failed (${response.status}).`);
+                }
+
+                addPopulationRows(await response.json());
+                status.textContent = "Population data loaded.";
+            } catch (error) {
+                status.textContent = `Unable to load population data: ${error.message}`;
+            }
+        }
+
+        loadPopulationData();
+    </script>
+</body>
+</html>
