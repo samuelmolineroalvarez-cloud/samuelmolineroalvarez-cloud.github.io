@@ -1,4 +1,4 @@
-const API_KEY = "YOUR_API_KEY";
+const API_KEY = "f023fa58fdb0065d1e7b17d248d169ab";
 
 const url =
     `https://api.openweathermap.org/data/2.5/weather?q=Lahti&units=metric&appid=${API_KEY}`;
