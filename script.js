@@ -8,10 +8,9 @@ form.addEventListener("submit", function (event) {
 
     const showName = input.value;
 
-    // Remove previous search results
+    // Remove previous results
     showContainer.innerHTML = "";
 
-    // API URL
     const url = "https://api.tvmaze.com/search/shows?q=" + showName;
 
     fetch(url)
@@ -22,11 +21,11 @@ form.addEventListener("submit", function (event) {
 
                 const show = item.show;
 
-                // Create show-data
+                // Main show container
                 const showData = document.createElement("div");
                 showData.classList.add("show-data");
 
-                // Create image
+                // Image
                 const image = document.createElement("img");
 
                 if (show.image) {
@@ -34,30 +33,34 @@ form.addEventListener("submit", function (event) {
                     image.alt = show.name;
                 }
 
-                // Create show-info
+                // Information container
                 const showInfo = document.createElement("div");
                 showInfo.classList.add("show-info");
 
-                // Create title
+                // Title
                 const title = document.createElement("h1");
                 title.textContent = show.name;
 
-                // Create summary
+                // Summary
                 const summary = document.createElement("p");
-                summary.innerHTML = show.summary || "No summary available.";
 
-                // Build the element
+                if (show.summary) {
+                    summary.innerHTML = show.summary;
+                } else {
+                    summary.textContent = "No summary available.";
+                }
+
+                // Build show-data
                 showInfo.appendChild(title);
                 showInfo.appendChild(summary);
 
                 showData.appendChild(image);
                 showData.appendChild(showInfo);
 
-                // Add to the container
                 showContainer.appendChild(showData);
             });
         })
         .catch(error => {
-            console.error("Error fetching shows:", error);
+            console.error("Error:", error);
         });
 });
