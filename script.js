@@ -1,18 +1,63 @@
-const API_KEY = "f023fa58fdb0065d1e7b17d248d169ab";
+const form = document.getElementById("search-form");
+const input = document.getElementById("input-show");
+const showContainer = document.querySelector(".show-container");
 
-const url =
-    `https://api.openweathermap.org/data/4.0/onecall/current?lat=60.9827&lon=25.6615&units=metric&appid=${API_KEY}`;
+form.addEventListener("submit", function (event) {
 
-fetch(url)
-    .then(response => response.json())
-    .then(data => {
-        const temperature = data.data[0].temp;
+    event.preventDefault();
 
-        document.getElementById("temperature").textContent =
-            `Temperature: ${temperature} °C`;
-    })
-    .catch(error => {
-        console.error(error);
-        document.getElementById("temperature").textContent =
-            "Error obtaining temperature";
-    });
+    const showName = input.value;
+
+    // Remove previous search results
+    showContainer.innerHTML = "";
+
+    // API URL
+    const url = "https://api.tvmaze.com/search/shows?q=" + showName;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+
+            data.forEach(item => {
+
+                const show = item.show;
+
+                // Create show-data
+                const showData = document.createElement("div");
+                showData.classList.add("show-data");
+
+                // Create image
+                const image = document.createElement("img");
+
+                if (show.image) {
+                    image.src = show.image.medium;
+                    image.alt = show.name;
+                }
+
+                // Create show-info
+                const showInfo = document.createElement("div");
+                showInfo.classList.add("show-info");
+
+                // Create title
+                const title = document.createElement("h1");
+                title.textContent = show.name;
+
+                // Create summary
+                const summary = document.createElement("p");
+                summary.innerHTML = show.summary || "No summary available.";
+
+                // Build the element
+                showInfo.appendChild(title);
+                showInfo.appendChild(summary);
+
+                showData.appendChild(image);
+                showData.appendChild(showInfo);
+
+                // Add to the container
+                showContainer.appendChild(showData);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching shows:", error);
+        });
+});
