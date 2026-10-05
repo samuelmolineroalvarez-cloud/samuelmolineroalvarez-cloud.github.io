@@ -1,35 +1,37 @@
 
+const map = L.map("map", {
+    minZoom: -3
+});
 
-javascript
-const municipalityUrl =
+
+// OpenStreetMap
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+
+
+// URLs
+const geojsonUrl =
     "https://geo.stat.fi/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=tilastointialueet:kunta4500k&outputFormat=json&srsName=EPSG:4326";
 
 const migrationUrl =
     "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/muutl/11a2.px";
 
 
-// Create map
-const map = L.map("map", {
-    minZoom: -3
-});
-
-
-// OpenStreetMap background
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-}).addTo(map);
-
-
-// Object containing migration data
-const migrationData = {};
-
-
-// First get the query from the JSON file
+// Get the query from the JSON file
 fetch("migration_data_query.json")
-    .then(response => response.json())
+    .then(response => {
 
-    // Send the query to the migration API
+        if (!response.ok) {
+            throw new Error("Could not load migration_data_query.json");
+        }
+
+        return response.json();
+    })
+
+    // Send query to Statistics Finland
     .then(query => {
+
         return fetch(migrationUrl, {
             method: "POST",
             headers: {
@@ -39,138 +41,157 @@ fetch("migration_data_query.json")
         });
     })
 
-    // Process migration response
-    .then(response => response.json())
-    .then(data => {
+    .then(response => {
 
-        processMigrationData(data);
+        if (!response.ok) {
+            throw new Error(
+                "Migration API error: " + response.status
+            );
+        }
 
-        // Get municipality GeoJSON
-        return fetch(municipalityUrl);
+        return response.json();
     })
 
-    // Create the map
-    .then(response => response.json())
-    .then(geojson => {
+    .then(migration => {
 
-        const municipalityLayer = L.geoJSON(geojson, {
+        console.log("MIGRATION DATA:");
+        console.log(migration);
 
-            // Required by the assignment
-            weight: 2,
+        // Create an object containing migration data
+        const migrationData = {};
 
-            // Colour municipalities according to migration
-            style: function(feature) {
+        const area =
+            migration.dimension.alue_23_20260101;
 
-                const code = feature.properties.kunta;
-                const migration = migrationData[code];
+        const codes = area.category.index;
+        const labels = area.category.label;
 
-                if (!migration) {
-                    return {
-                        weight: 2
-                    };
-                }
+        // JSON-stat2 may return index as an object
+        const orderedCodes = Object.keys(codes).sort(
+            (a, b) => codes[a] - codes[b]
+        );
 
-                const positive = migration.positive;
-                const negative = migration.negative;
 
-                let hue =
-                    Math.pow(positive / negative, 3) * 60;
+        orderedCodes.forEach((code, index) => {
 
-                // Hue cannot be greater than 120
-                hue = Math.min(hue, 120);
-
-                return {
-                    weight: 2,
-                    color: `hsl(${hue}, 75%, 50%)`
-                };
-            },
-
-            // Tooltip and popup
-            onEachFeature: function(feature, layer) {
-
-                const code = feature.properties.kunta;
-                const name = feature.properties.nimi;
-
-                const migration = migrationData[code];
-
-                // Show municipality name when hovering
-                layer.bindTooltip(name);
-
-                // Show migration data when clicking
-                if (migration) {
-
-                    layer.bindPopup(`
-                        <strong>${name}</strong><br>
-                        Positive migration: ${migration.positive}<br>
-                        Negative migration: ${migration.negative}
-                    `);
-
-                }
+            // SSS = Finland total
+            if (code === "SSS") {
+                return;
             }
 
-        }).addTo(map);
+            // API code: KU005
+            // GeoJSON code: 005
+            const municipalityCode =
+                code.replace("KU", "");
 
 
-        // Fit map to GeoJSON
-        map.fitBounds(municipalityLayer.getBounds());
+            // Last dimension is contents:
+            // tulo, lahto
+            const positive =
+                Number(migration.value[index * 2]);
+
+            const negative =
+                Number(migration.value[index * 2 + 1]);
+
+
+            migrationData[municipalityCode] = {
+                name: labels[code],
+                positive: positive,
+                negative: negative
+            };
+        });
+
+
+        console.log("PROCESSED MIGRATION DATA:");
+        console.log(migrationData);
+
+
+        // Now load municipality GeoJSON
+        return fetch(geojsonUrl)
+            .then(response => response.json())
+            .then(geojson => {
+
+                createMap(geojson, migrationData);
+
+            });
     })
 
     .catch(error => {
-        console.error("Error:", error);
+        console.error(error);
     });
 
 
-// Process migration API response
-function processMigrationData(data) {
 
-    const values = data.value;
+function createMap(geojson, migrationData) {
 
-    const category =
-        data.dimension.alue_23_20260101.category;
+    const layer = L.geoJSON(geojson, {
 
-    const labels = category.label;
-    const index = category.index;
+        weight: 2,
 
+        style: function(feature) {
 
-    // Get municipality codes in the correct order
-    let codes;
+            const code = feature.properties.kunta;
 
-    if (Array.isArray(index)) {
-        codes = index;
-    } else {
-        codes = Object.keys(index).sort(
-            (a, b) => index[a] - index[b]
-        );
-    }
+            const data = migrationData[code];
 
 
-    codes.forEach((apiCode, i) => {
+            // If there is no migration data
+            if (!data) {
+                return {
+                    weight: 2
+                };
+            }
 
-        // SSS = Finland as a whole, not a municipality
-        if (apiCode === "SSS") {
-            return;
+
+            let hue =
+                Math.pow(
+                    data.positive / data.negative,
+                    3
+                ) * 60;
+
+
+            // Maximum hue = 120
+            hue = Math.min(hue, 120);
+
+
+            return {
+                weight: 2,
+                color: `hsl(${hue}, 75%, 50%)`
+            };
+        },
+
+
+        onEachFeature: function(feature, layer) {
+
+            const code = feature.properties.kunta;
+            const name = feature.properties.nimi;
+
+            const data = migrationData[code];
+
+
+            // Tooltip
+            layer.bindTooltip(name);
+
+
+            // Popup
+            if (data) {
+
+                layer.bindPopup(
+                    "<strong>" + name + "</strong><br>" +
+                    "Positive migration: " + data.positive + "<br>" +
+                    "Negative migration: " + data.negative
+                );
+
+            }
         }
 
-
-        // API uses KU005, KU009, etc.
-        // GeoJSON uses 005, 009, etc.
-        const municipalityCode =
-            apiCode.replace("KU", "");
+    }).addTo(map);
 
 
-        // tulo = positive migration
-        // lahto = negative migration
-        const positive = Number(values[i * 2]);
-        const negative = Number(values[i * 2 + 1]);
-
-
-        migrationData[municipalityCode] = {
-            positive: positive,
-            negative: negative,
-            name: labels[apiCode]
-        };
-    });
+    // Fit map to Finland
+    map.fitBounds(layer.getBounds());
 }
+
 
 
 
