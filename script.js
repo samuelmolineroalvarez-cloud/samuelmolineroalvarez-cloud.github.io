@@ -3,83 +3,69 @@ const gameArea = document.getElementById("game-area");
 const startButton = document.getElementById("start-button");
 const status = document.getElementById("status");
 
-let ballX = 0;
-let ballY = 0;
+let x = 0;
+let y = 0;
 
-const speed = 0.5;
+const sensitivity = 0.15;
 
 function moveBall(event) {
-    // gamma = rotation from left to right
-    // beta = rotation from front to back
 
-    const gamma = event.gamma;
     const beta = event.beta;
+    const gamma = event.gamma;
 
-    if (gamma === null || beta === null) {
-        status.textContent = "Gyroscope data is not available.";
+    if (beta === null || gamma === null) {
+        status.textContent = "No sensor data available.";
         return;
     }
 
-    // Convert phone inclination into movement
-    ballX += gamma * speed;
-    ballY += beta * speed;
+    // Move according to the phone's inclination
+    x += gamma * sensitivity;
+    y += beta * sensitivity;
 
-    const areaWidth = gameArea.clientWidth;
-    const areaHeight = gameArea.clientHeight;
+    const maxX = gameArea.clientWidth - ball.offsetWidth;
+    const maxY = gameArea.clientHeight - ball.offsetHeight;
 
-    const ballSize = ball.offsetWidth;
+    // Keep the ball inside the area
+    x = Math.max(0, Math.min(maxX, x));
+    y = Math.max(0, Math.min(maxY, y));
 
-    // Keep the ball inside the game area
-    const minX = ballSize / 2;
-    const maxX = areaWidth - ballSize / 2;
+    ball.style.left = `${x}px`;
+    ball.style.top = `${y}px`;
 
-    const minY = ballSize / 2;
-    const maxY = areaHeight - ballSize / 2;
-
-    ballX = Math.max(minX, Math.min(maxX, areaWidth / 2 + ballX));
-    ballY = Math.max(minY, Math.min(maxY, areaHeight / 2 + ballY));
-
-    ball.style.left = `${ballX}px`;
-    ball.style.top = `${ballY}px`;
+    status.textContent =
+        `Beta: ${beta.toFixed(1)}° | Gamma: ${gamma.toFixed(1)}°`;
 }
+
 
 async function startGyroscope() {
 
-    // iPhone/iPad require permission
+    // Required by iOS
     if (
         typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function"
     ) {
-        try {
-            const permission = await DeviceOrientationEvent.requestPermission();
+        const permission =
+            await DeviceOrientationEvent.requestPermission();
 
-            if (permission !== "granted") {
-                status.textContent = "Permission to use the gyroscope was denied.";
-                return;
-            }
-        } catch (error) {
-            status.textContent = "Could not access the gyroscope.";
+        if (permission !== "granted") {
+            status.textContent = "Sensor permission denied.";
             return;
         }
     }
 
-    // Start listening to the phone's orientation
+    // Start sensor
     window.addEventListener("deviceorientation", moveBall);
 
-    status.textContent = "Gyroscope active! Tilt your phone.";
+    // Start ball in the middle
+    x = (gameArea.clientWidth - ball.offsetWidth) / 2;
+    y = (gameArea.clientHeight - ball.offsetHeight) / 2;
+
+    ball.style.left = `${x}px`;
+    ball.style.top = `${y}px`;
+
+    status.textContent = "Gyroscope active!";
     startButton.disabled = true;
 }
-
-// Start button
-startButton.addEventListener("click", startGyroscope);
-
-// Initial position
-ballX = gameArea.clientWidth / 2;
-ballY = gameArea.clientHeight / 2;
-
-ball.style.left = `${ballX}px`;
-ball.style.top = `${ballY}px`;
-
 
 
 
