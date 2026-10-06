@@ -5,31 +5,45 @@ body {
 }
 
 #start-button {
-    padding: 12px 20px;
-    font-size: 16px;
+    padding: 12px 24px;
+    font-size: 18px;
     margin-bottom: 20px;
 }
 
 #game-area {
     position: relative;
+
     width: 90%;
     max-width: 600px;
+
     height: 400px;
+
     margin: auto;
+
     border: 3px solid black;
+
     overflow: hidden;
-    background-color: #f2f2f2;
+
+    background-color: #eeeeee;
 }
 
 #ball {
     position: absolute;
+
     width: 40px;
     height: 40px;
+
     background-color: red;
+
     border-radius: 50%;
 
     left: 50%;
     top: 50%;
 
     transform: translate(-50%, -50%);
+}
+
+#status {
+    margin-top: 15px;
+    font-family: monospace;
 }
