@@ -3,78 +3,72 @@ const gameArea = document.getElementById("game-area");
 const startButton = document.getElementById("start-button");
 const status = document.getElementById("status");
 
-let x;
-let y;
+let x = 0;
+let y = 0;
 
 let velocityX = 0;
 let velocityY = 0;
 
-let beta = 0;
-let gamma = 0;
-
-let initialBeta = 0;
-let initialGamma = 0;
+let accelerationX = 0;
+let accelerationY = 0;
 
 let running = false;
 let animationFrame;
 
 
-// Physics settings
-const acceleration = 0.08;
-const friction = 0.97;
-const maxVelocity = 8;
-const bounce = 0.7;
+// Physics
+const gravity = 0.08;
+const friction = 0.985;
+const bounce = 0.65;
+const maxSpeed = 12;
 
 
 // --------------------------------------------------
-// Get the phone orientation
+// PHONE MOTION
 // --------------------------------------------------
 
-function handleOrientation(event) {
+function handleMotion(event) {
 
-    if (event.beta === null || event.gamma === null) {
-        status.textContent = "No sensor data available.";
+    const acceleration = event.accelerationIncludingGravity;
+
+    if (!acceleration) {
+        status.textContent = "No motion data received.";
         return;
     }
 
-    beta = event.beta;
-    gamma = event.gamma;
+    /*
+     * X = left/right tilt
+     * Y = forward/backward tilt
+     */
+
+    accelerationX = acceleration.x || 0;
+    accelerationY = acceleration.y || 0;
 
     status.textContent =
-        `Tilt: X ${gamma.toFixed(1)}° | Y ${beta.toFixed(1)}°`;
+        `Motion X: ${accelerationX.toFixed(2)}
+         | Y: ${accelerationY.toFixed(2)}`;
 }
 
 
 // --------------------------------------------------
-// Physics
+// MARBLE PHYSICS
 // --------------------------------------------------
 
-function updateBall() {
+function update() {
 
     if (!running) {
         return;
     }
 
-    // Difference from the calibrated position
-    const tiltX = gamma - initialGamma;
-    const tiltY = beta - initialBeta;
+    /*
+     * Phone tilt produces acceleration.
+     *
+     * The minus signs compensate for the fact that
+     * gravity points in the opposite direction.
+     */
 
-
-    // Tilt creates acceleration
-    velocityX += tiltX * acceleration;
-    velocityY += tiltY * acceleration;
-
-
-    // Limit maximum speed
-    velocityX = Math.max(
-        -maxVelocity,
-        Math.min(maxVelocity, velocityX)
-    );
-
-    velocityY = Math.max(
-        -maxVelocity,
-        Math.min(maxVelocity, velocityY)
-    );
+    velocityX -= accelerationX * gravity;
+    velocityY += accelerationY * gravity;
 
 
     // Friction
@@ -82,7 +76,19 @@ function updateBall() {
     velocityY *= friction;
 
 
-    // Move the marble
+    // Maximum speed
+    velocityX = Math.max(
+        -maxSpeed,
+        Math.min(maxSpeed, velocityX)
+    );
+
+    velocityY = Math.max(
+        -maxSpeed,
+        Math.min(maxSpeed, velocityY)
+    );
+
+
+    // Move marble
     x += velocityX;
     y += velocityY;
 
@@ -91,63 +97,67 @@ function updateBall() {
     const maxY = gameArea.clientHeight - ball.offsetHeight;
 
 
-    // Left wall
+    // LEFT
     if (x <= 0) {
         x = 0;
-        velocityX *= -bounce;
+        velocityX = -velocityX * bounce;
     }
 
 
-    // Right wall
+    // RIGHT
     if (x >= maxX) {
         x = maxX;
-        velocityX *= -bounce;
+        velocityX = -velocityX * bounce;
     }
 
 
-    // Top wall
+    // TOP
     if (y <= 0) {
         y = 0;
-        velocityY *= -bounce;
+        velocityY = -velocityY * bounce;
     }
 
 
-    // Bottom wall
+    // BOTTOM
     if (y >= maxY) {
         y = maxY;
-        velocityY *= -bounce;
+        velocityY = -velocityY * bounce;
     }
 
 
-    // Update visual position
     ball.style.left = `${x}px`;
     ball.style.top = `${y}px`;
 
 
-    animationFrame = requestAnimationFrame(updateBall);
+    animationFrame = requestAnimationFrame(update);
 }
 
 
 // --------------------------------------------------
-// Start
+// START SENSOR
 // --------------------------------------------------
 
-async function startGyroscope() {
+async function startSensor() {
 
-    // iPhone / iPad permission
+    /*
+     * iOS requires explicit permission.
+     */
+
     if (
-        typeof DeviceOrientationEvent !== "undefined" &&
-        typeof DeviceOrientationEvent.requestPermission === "function"
+        typeof DeviceMotionEvent !== "undefined" &&
+        typeof DeviceMotionEvent.requestPermission === "function"
     ) {
 
         try {
 
             const permission =
-                await DeviceOrientationEvent.requestPermission();
+                await DeviceMotionEvent.requestPermission();
 
             if (permission !== "granted") {
+
                 status.textContent =
-                    "Permission to use motion sensors was denied.";
+                    "Motion sensor permission denied.";
+
                 return;
             }
 
@@ -156,63 +166,56 @@ async function startGyroscope() {
             console.error(error);
 
             status.textContent =
-                "Could not access motion sensors.";
+                "Error requesting motion permission.";
 
             return;
         }
     }
 
 
-    // Listen for phone movement
+    /*
+     * Start listening for motion.
+     */
+
     window.addEventListener(
-        "deviceorientation",
-        handleOrientation
+        "devicemotion",
+        handleMotion
     );
 
 
-    // Give the phone a moment to provide its orientation
-    setTimeout(() => {
+    /*
+     * Put the marble in the centre.
+     */
 
-        // Current position becomes the neutral position
-        initialBeta = beta;
-        initialGamma = gamma;
+    x = (gameArea.clientWidth - ball.offsetWidth) / 2;
+    y = (gameArea.clientHeight - ball.offsetHeight) / 2;
 
+    velocityX = 0;
+    velocityY = 0;
 
-        // Start in the middle
-        x = (gameArea.clientWidth - ball.offsetWidth) / 2;
-        y = (gameArea.clientHeight - ball.offsetHeight) / 2;
-
-
-        velocityX = 0;
-        velocityY = 0;
+    ball.style.left = `${x}px`;
+    ball.style.top = `${y}px`;
 
 
-        ball.style.left = `${x}px`;
-        ball.style.top = `${y}px`;
+    running = true;
+
+    startButton.disabled = true;
+
+    status.textContent =
+        "Sensor active. Tilt your phone!";
 
 
-        running = true;
-
-        startButton.disabled = true;
-
-        status.textContent =
-            "Marble active! Tilt your phone.";
-
-
-        // Start physics loop
-        animationFrame = requestAnimationFrame(updateBall);
-
-    }, 500);
+    animationFrame = requestAnimationFrame(update);
 }
 
 
 // --------------------------------------------------
-// Button
+// BUTTON
 // --------------------------------------------------
 
 startButton.addEventListener(
     "click",
-    startGyroscope
+    startSensor
 );
 
 
