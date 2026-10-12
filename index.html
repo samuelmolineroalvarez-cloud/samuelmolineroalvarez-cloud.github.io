@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finnish Population</title>
+  <script src="https://unpkg.com/frappe-charts@1.6.2/dist/frappe-charts.min.umd.js"></script>
+  <script src="script.js" defer></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+    form { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    input, button { padding: .6rem; font-size: 1rem; }
+    #chart { margin-top: 1.5rem; }
+    #message { min-height: 1.4em; }
+  </style>
+</head>
+<body>
+  <h1>Population of Finland and its municipalities</h1>
+  <form id="municipality-form">
+    <label for="input-area">Municipality:</label>
+    <input id="input-area" type="text" placeholder="For example, Lahti">
+    <button id="submit-data" type="submit">Show population</button>
+    <button id="add-data" type="button">Predict next year</button>
+  </form>
+  <p id="message" role="status"></p>
+  <div id="chart"></div>
+  <p><a id="navigation" href="/newchart.html">View births and deaths</a></p>
+</body>
+</html>
