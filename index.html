@@ -441,7 +441,7 @@
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search city or town (e.g. Lahti)..." aria-label="Search for a location">
             <button id="search-btn" class="btn">Search</button>
-            <button id="geo-btn" class="btn btn-secondary" title="Use my current location">📍 GPS</button>
+            <button id="geo-btn" class="btn btn-secondary" title="Use my current location">GPS</button>
         </div>
         <div class="controls-container">
             <select id="unit-selector" aria-label="Temperature unit selector">
@@ -449,7 +449,7 @@
                 <option value="F">°F</option>
                 <option value="K">K</option>
             </select>
-            <button id="favorite-btn" class="btn btn-star" title="Save current location to favorites">⭐</button>
+            <button id="favorite-btn" class="btn btn-star" title="Save current location to favorites">FAV</button>
         </div>
     </header>
 
@@ -457,7 +457,7 @@
     <main class="dashboard-grid">
         <!-- Current Weather Card -->
         <section class="card current-weather-card" aria-labelledby="current-title">
-            <h2 id="current-title">📍 Current Weather</h2>
+            <h2 id="current-title">Current Weather</h2>
             <div id="current-weather-content">
                 <div class="placeholder-text"><div class="spinner"></div> Fetching initial forecast...</div>
             </div>
@@ -465,7 +465,7 @@
 
         <!-- Saved Favorites Sidebar -->
         <section class="card favorites-card" aria-labelledby="favorites-title">
-            <h2 id="favorites-title">⭐ Favorites</h2>
+            <h2 id="favorites-title">Favorites</h2>
             <ul id="favorites-list" class="favorites-list">
                 <li class="placeholder-text" style="padding:1rem;">No saved favorite locations yet.</li>
             </ul>
@@ -481,7 +481,7 @@
 
         <!-- Provider Comparison Graph -->
         <section class="card comparison-card full-width" aria-labelledby="comparison-title">
-            <h2 id="comparison-title">📊 Multi-Provider Temperature Comparison (24h)</h2>
+            <h2 id="comparison-title">Multi-Provider Temperature Comparison (24h)</h2>
             <div class="chart-container">
                 <canvas id="temperatureChart"></canvas>
             </div>
@@ -492,7 +492,7 @@
 
         <!-- 7-Day Outlook Grid -->
         <section class="card daily-card full-width" aria-labelledby="daily-title">
-            <h2 id="daily-title">📅 7-Day Forecast</h2>
+            <h2 id="daily-title"> 7-Day Forecast</h2>
             <div id="daily-forecast-container" class="daily-forecast-grid">
                 <div class="placeholder-text">Select a location to view the 7-day outlook.</div>
             </div>
@@ -534,17 +534,18 @@
 
         // Centralized Weather Code to Description & Icon Mapping (WMO standard)
         function getWeatherDetails(code) {
-            const mapping = {
-                0: { label: 'Clear Sky', icon: '☀️', theme: 'theme-clear-day' },
-                1: { label: 'Mainly Clear', icon: '🌤️', theme: 'theme-clear-day' },
-                2: { label: 'Partly Cloudy', icon: '⛅', theme: 'theme-clear-day' },
-                3: { label: 'Overcast', icon: '☁️', theme: 'theme-rainy' },
-                45: { label: 'Foggy', icon: '🌫️', theme: 'theme-rainy' },
-                51: { label: 'Light Drizzle', icon: '🌧️', theme: 'theme-rainy' },
-                61: { label: 'Rain Showers', icon: '🌧️', theme: 'theme-rainy' },
-                71: { label: 'Snowfall', icon: '❄️', theme: 'theme-snowy' },
-                95: { label: 'Thunderstorm', icon: '⚡', theme: 'theme-rainy' }
-            };
+                const weatherConfig = {
+        0: { label: 'Clear Sky', icon: '<i class="fa-solid fa-sun"></i>', theme: 'theme-clear-day' },
+        1: { label: 'Mainly Clear', icon: '<i class="fa-solid fa-cloud-sun"></i>', theme: 'theme-clear-day' },
+        2: { label: 'Partly Cloudy', icon: '<i class="fa-solid fa-cloud-sun"></i>', theme: 'theme-clear-day' },
+        3: { label: 'Overcast', icon: '<i class="fa-solid fa-cloud"></i>', theme: 'theme-rainy' },
+        45: { label: 'Foggy', icon: '<i class="fa-solid fa-smog"></i>', theme: 'theme-rainy' },
+        51: { label: 'Light Drizzle', icon: '<i class="fa-solid fa-cloud-rain"></i>', theme: 'theme-rainy' },
+        61: { label: 'Rain Showers', icon: '<i class="fa-solid fa-cloud-showers-heavy"></i>', theme: 'theme-rainy' },
+        71: { label: 'Snowfall', icon: '<i class="fa-solid fa-snowflake"></i>', theme: 'theme-snowy' },
+        95: { label: 'Thunderstorm', icon: '<i class="fa-solid fa-cloud-bolt"></i>', theme: 'theme-rainy' }
+        };
+        
             return mapping[code] || { label: 'Variable Conditions', icon: '🌡️', theme: 'theme-clear-day' };
         }
 
