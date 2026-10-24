@@ -1,16 +1,12 @@
 export async function fetchMetNorway(lat, lon) {
-    const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
-    
+    const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;    
     const response = await fetch(url, {
         headers: { 'User-Agent': 'WeatherAppUniversityProject/1.0' }
-    });
-    
+    });    
     if (!response.ok) throw new Error('Error al conectar con MET Norway');
-    const data = await response.json();
-    
+    const data = await response.json();    
     const timeseries = data.properties.timeseries;
-    const currentProps = timeseries[0].data.instant.details;
-    
+    const currentProps = timeseries[0].data.instant.details;    
     return {
         provider: 'MET Norway',
         current: {
