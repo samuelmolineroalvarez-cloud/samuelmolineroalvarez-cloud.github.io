@@ -5,13 +5,10 @@ import { formatTemperature } from './utils/conversions.js';
 import { getWeatherInfo } from './utils/weatherCodes.js';
 import { renderComparisonChart } from './charts/temperatureChart.js';
 import { getFavorites, saveFavorite, getStoredUnit, saveStoredUnit } from './services/storageService.js';
-
 let currentLocation = null;
 let currentWeatherData = [];
 let currentUnit = getStoredUnit();
-
 document.getElementById('unit-selector').value = currentUnit;
-
 document.getElementById('search-btn').addEventListener('click', async () => {
     const query = document.getElementById('search-input').value;
     const results = await searchLocation(query);
@@ -21,7 +18,6 @@ document.getElementById('search-btn').addEventListener('click', async () => {
         alert('Not found');
     }
 });
-
 document.getElementById('geo-btn').addEventListener('click', () => {
     if (!navigator.geolocation) {
         alert('Not supported');
@@ -38,19 +34,16 @@ document.getElementById('geo-btn').addEventListener('click', () => {
         alert('Unable of finding location');
     });
 });
-
 document.getElementById('unit-selector').addEventListener('change', (e) => {
     currentUnit = e.target.value;
     saveStoredUnit(currentUnit);
     if (currentWeatherData.length > 0) renderUI();
 });
-
 document.getElementById('favorite-btn').addEventListener('click', () => {
     if (!currentLocation) return;
     saveFavorite(currentLocation);
     loadFavoritesUI();
 });
-
 async function selectLocation(loc) {
     const lat = loc.latitude ?? loc.lat;
     const lon = loc.longitude ?? loc.lon;
@@ -83,7 +76,6 @@ async function selectLocation(loc) {
         console.error('Error', error);
     }
 }
-
 function renderUI() {
     const primary = currentWeatherData[0];
     const weatherInfo = getWeatherInfo(primary.current.conditionCode);
@@ -99,7 +91,6 @@ function renderUI() {
         <p>Humidity: ${primary.current.humidity}% | wind: ${primary.current.windSpeed} m/s</p>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Fuente: ${primary.provider}</p>
     `;
-
     document.getElementById('hourly-timeline').innerHTML = primary.hourly.map(h => {
         const hInfo = getWeatherInfo(h.code);
         const timeStr = new Date(h.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -153,5 +144,4 @@ function loadFavoritesUI() {
         });
     });
 }
-
 loadFavoritesUI();
