@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meteo dashboard</title>
     <link rel="stylesheet" href="./css/styles.css">
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="theme-clear-day">
@@ -31,39 +29,30 @@
     </header>
 
     <main class="dashboard-grid">
-        <!-- Tiempo Actual -->
         <section class="card current-weather-card">
             <h2>Current time</h2>
             <div id="current-weather-content">
                 <p class="placeholder-text">search a city or use GPS</p>
             </div>
         </section>
-
-        <!-- Ubicaciones Favoritas -->
         <section class="card favorites-card">
             <h2>favorites locations</h2>
             <ul id="favorites-list" class="favorites-list">
                 <li class="empty-favorite">No favorites have been selected</li>
             </ul>
         </section>
-
-        <!-- Pronóstico Por Horas -->
         <section class="card hourly-card full-width">
             <h2>Next 24h</h2>
             <div id="hourly-timeline" class="hourly-timeline">
                 <p class="placeholder-text">select location</p>
             </div>
         </section>
-
-        <!-- Gráfica de Comparación -->
         <section class="card comparison-card full-width">
             <h2>Providers comparative of temperatures(24h)</h2>
             <div class="chart-container">
                 <canvas id="temperatureChart"></canvas>
             </div>
         </section>
-
-        <!-- Pronóstico de 7 Días -->
         <section class="card daily-card full-width">
             <h2>next 7 days</h2>
             <div id="daily-forecast-container" class="daily-forecast-grid">
@@ -71,11 +60,9 @@
             </div>
         </section>
     </main>
-
     <footer class="app-footer">
         <p>data providers: Open-Meteo, MET Norway.</p>
     </footer>
-
     <script type="module" src="./js/app.js"></script>
 </body>
 </html>
