@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Meteorológico</title>
+    <title>Meteo dashboard</title>
     <link rel="stylesheet" href="./css/styles.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,8 +17,8 @@
         </div>
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Buscar ciudad o municipio..." aria-label="Buscar ubicación">
-            <button id="search-btn" class="btn">Buscar</button>
-            <button id="geo-btn" class="btn btn-secondary" title="Usar mi ubicación actual"><i class="fa-solid fa-location-dot"></i> Mi ubicación</button>
+            <button id="search-btn" class="btn">Search</button>
+            <button id="geo-btn" class="btn btn-secondary" title="Usar mi ubicación actual"><i class="fa-solid fa-location-dot"></i>GPS</button>
         </div>
         <div class="controls-container">
             <select id="unit-selector" aria-label="Seleccionar unidad de temperatura">
@@ -33,31 +33,31 @@
     <main class="dashboard-grid">
         <!-- Tiempo Actual -->
         <section class="card current-weather-card">
-            <h2>Tiempo Actual</h2>
+            <h2>Current time</h2>
             <div id="current-weather-content">
-                <p class="placeholder-text">Busca una ciudad o usa el GPS para ver el pronóstico.</p>
+                <p class="placeholder-text">search a city or use GPS</p>
             </div>
         </section>
 
         <!-- Ubicaciones Favoritas -->
         <section class="card favorites-card">
-            <h2>Ubicaciones Favoritas</h2>
+            <h2>favorites locations</h2>
             <ul id="favorites-list" class="favorites-list">
-                <li class="empty-favorite">No hay favoritos guardados.</li>
+                <li class="empty-favorite">No favorites have been selected</li>
             </ul>
         </section>
 
         <!-- Pronóstico Por Horas -->
         <section class="card hourly-card full-width">
-            <h2>Pronóstico por Horas (Próximas 24h)</h2>
+            <h2>Next 24h</h2>
             <div id="hourly-timeline" class="hourly-timeline">
-                <p class="placeholder-text">Selecciona una ubicación para ver el pronóstico por horas.</p>
+                <p class="placeholder-text">select location</p>
             </div>
         </section>
 
         <!-- Gráfica de Comparación -->
         <section class="card comparison-card full-width">
-            <h2>Comparativa de Temperatura entre Proveedores (24h)</h2>
+            <h2>Providers comparative of temperatures(24h)</h2>
             <div class="chart-container">
                 <canvas id="temperatureChart"></canvas>
             </div>
@@ -65,15 +65,15 @@
 
         <!-- Pronóstico de 7 Días -->
         <section class="card daily-card full-width">
-            <h2>Pronóstico de 7 Días</h2>
+            <h2>next 7 days</h2>
             <div id="daily-forecast-container" class="daily-forecast-grid">
-                <p class="placeholder-text">Selecciona una ubicación para ver los próximos 7 días.</p>
+                <p class="placeholder-text">select location</p>
             </div>
         </section>
     </main>
 
     <footer class="app-footer">
-        <p>Fuentes de datos: Open-Meteo, MET Norway.</p>
+        <p>data providers: Open-Meteo, MET Norway.</p>
     </footer>
 
     <script type="module" src="./js/app.js"></script>
