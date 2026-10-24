@@ -18,24 +18,24 @@ document.getElementById('search-btn').addEventListener('click', async () => {
     if (results.length > 0) {
         selectLocation(results[0]);
     } else {
-        alert('Ubicación no encontrada.');
+        alert('Not found');
     }
 });
 
 document.getElementById('geo-btn').addEventListener('click', () => {
     if (!navigator.geolocation) {
-        alert('Geolocalización no soportada.');
+        alert('Not supported');
         return;
     }
     navigator.geolocation.getCurrentPosition(position => {
         selectLocation({
-            name: 'Mi Ubicación',
+            name: 'My location',
             country: '',
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         });
     }, () => {
-        alert('No se pudo obtener la ubicación GPS.');
+        alert('Unable of finding location');
     });
 });
 
@@ -56,7 +56,7 @@ async function selectLocation(loc) {
     const lon = loc.longitude ?? loc.lon;
 
     if (!lat || !lon) {
-        alert('Coordenadas no válidas.');
+        alert('not valid data');
         return;
     }
 
@@ -73,14 +73,14 @@ async function selectLocation(loc) {
             .map(r => r.value);
 
         if (currentWeatherData.length === 0) {
-            alert('Error al obtener datos meteorológicos.');
+            alert('Error obtainig data');
             return;
         }
 
         renderUI();
         loadFavoritesUI();
     } catch (error) {
-        console.error('Error general:', error);
+        console.error('Error', error);
     }
 }
 
@@ -95,8 +95,8 @@ function renderUI() {
         <div style="font-size: 3rem; margin: 0.5rem 0; color: var(--accent-color);">
             ${weatherInfo.icon} ${formatTemperature(primary.current.temp, currentUnit)}
         </div>
-        <p><strong>${weatherInfo.label}</strong> (Sensación: ${formatTemperature(primary.current.feelsLike, currentUnit)})</p>
-        <p>Humedad: ${primary.current.humidity}% | Viento: ${primary.current.windSpeed} m/s</p>
+        <p><strong>${weatherInfo.label}</strong> (Sensation: ${formatTemperature(primary.current.feelsLike, currentUnit)})</p>
+        <p>Humidity: ${primary.current.humidity}% | wind: ${primary.current.windSpeed} m/s</p>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Fuente: ${primary.provider}</p>
     `;
 
